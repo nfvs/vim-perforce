@@ -16,6 +16,7 @@ endif
 command P4Info call perforce#P4CallInfo()
 command P4Edit call perforce#P4CallEdit()
 command P4Revert call perforce#P4CallRevert()
+command P4MoveToChangelist call perforce#P4CallMoveToChangelist()
 
 " Utilities
 
@@ -52,6 +53,12 @@ augroup vim_perforce
 augroup END
 
 " P4 functions
+
+function! perforce#P4GetUser()
+  let output = s:P4ShellCurreentBuffer('info')
+  " TODO: retrieve username from output
+  "m = matchstr("User name: nsantos\nblablabla", "User name: ")
+endfunction
 
 function! perforce#P4CallInfo()
   let output = s:P4ShellCurreentBuffer('info')
@@ -91,5 +98,30 @@ function! perforce#P4CallRevert()
     if v:shell_error != 0
       call s:err('Unable to revert file.')
     endif
+  endif
+endfunction
+
+function! perforce#P4CallMoveToChangelist()
+  if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
+    exe "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
+    exe 'normal ggdG'
+  else
+    silent! belowright new
+    silent! resize 10
+    silent! setlocal buftype=nowrite bufhidden=wipe nobuflisted noswapfile nowrap nonumber
+    let t:p4sbuf=bufnr('%')
+  end
+  nnoremap <buffer> <silent> q      : <C-U>bdelete!<CR>
+  nnoremap <buffer> <silent> <esc>  : <C-U>bdelete!<CR>
+  nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist() <CR>
+  " Populate buffer with existing Changelists
+  " TODO:
+endfunction
+
+function perforce#P4ConfirmMoveToChangelist()
+  echo 'confirm move'
+
+  if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
+    bdelete!
   endif
 endfunction
