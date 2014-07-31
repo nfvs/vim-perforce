@@ -1,6 +1,6 @@
 " perforce.vim - Perforce
-" Author:		Nuno Santos <https://github.com/nfvs>
-" Version:		0.1
+" Author:		    Nuno Santos <https://github.com/nfvs>
+" Version:		  0.1
 
 if exists("g:vim_perforce_loaded") || &cp
   finish
@@ -19,11 +19,6 @@ command P4Revert call perforce#P4CallRevert()
 
 " Utilities
 
-function! s:P4ShellCurrentBuffer(cmd)
-  let filename = expand('%:p')
-  return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
-endfunction
-
 function! s:throw(string) abort
   let v:errmsg = 'vim-perforce: ' . a:string
   throw v:errmsg
@@ -35,13 +30,18 @@ endfunction
 
 function! s:warn(str) abort
   echohl WarningMsg
-  call s:msg(a:str)
+  echomsg 'vim-perforce: ' . a:str
   echohl None
   let v:warningmsg = a:str
 endfunction
 
 function! s:err(str) abort
   echoerr 'vim-perforce: ' . a:str
+endfunction
+
+function! s:P4ShellCurrentBuffer(cmd)
+  let filename = expand('%:p')
+  return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
 endfunction
 
 " Events
@@ -65,7 +65,7 @@ function! perforce#P4CallEditWithPrompt()
     let res = perforce#P4CallEdit()
     " We need to redraw in case of an error, to dismiss the
     " W10 warning 'editing a read-only file'.
-    if res == 1
+    if res != 1
       redraw
     endif
   endif
@@ -73,8 +73,6 @@ endfunction
 
 function! perforce#P4CallEdit()
   let output = s:P4ShellCurrentBuffer('edit')
-  "let ok = matchstr(output, 'opened for edit\n$')
-  "if empty(ok)
   if v:shell_error != 0
     call s:err('Unable to open file for edit.')
     return 1
@@ -90,6 +88,8 @@ function! perforce#P4CallRevert()
     let output = s:P4ShellCurrentBuffer('revert')
     if v:shell_error != 0
       call s:err('Unable to revert file.')
+      return 1
     endif
+    e!
   endif
 endfunction
