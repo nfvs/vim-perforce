@@ -83,7 +83,17 @@ function! perforce#P4CallEdit()
 endfunction
 
 function! perforce#P4CallRevert()
-  let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
+  let output = s:P4ShellCurrentBuffer('diff -f -sa')
+  if !empty(matchstr(output, "not under client\'s root"))
+    call s:warn('File not under P4.')
+    return
+  endif
+  " If the file hasn't changed (no output), don't ask for confirmation
+  if empty(output)
+    let do_revert = 1
+  else
+    let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
+  endif
   if do_revert == 1
     let output = s:P4ShellCurrentBuffer('revert')
     if v:shell_error != 0
