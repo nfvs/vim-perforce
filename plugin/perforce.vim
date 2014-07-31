@@ -66,10 +66,12 @@ endfunction
 
 function! perforce#P4CallEdit()
   let output = system(g:vim_perforce_executable . ' edit ' . expand('%:p'))
-  let ok = matchstr(output, 'opened for edit')
+  let ok = matchstr(output, 'opened for edit\n$')
   if empty(ok)
     call s:err('Unable to open file for edit.')
-    call s:msg(output)
     return 1
   endif
+  setlocal noreadonly
+  setlocal autoread
+  call s:msg('File open for edit.')
 endfunction
