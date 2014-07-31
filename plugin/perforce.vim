@@ -15,8 +15,14 @@ endif
 
 command P4Info call perforce#P4CallInfo()
 command P4Edit call perforce#P4CallEdit()
+command P4Revert call perforce#P4CallRevert()
 
 " Utilities
+
+function! s:P4ShellCurrentBuffer(cmd)
+  let filename = expand('%:p')
+  return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
+endfunction
 
 function! s:throw(string) abort
   let v:errmsg = 'vim-perforce: ' . a:string
@@ -48,10 +54,11 @@ augroup END
 " P4 functions
 
 function! perforce#P4CallInfo()
-  let output = system(g:vim_perforce_executable . ' info')
+  let output = s:P4ShellCurreentBuffer('info')
   echo output
 endfunction
 
+" Should only be called from FileChangedRO autocmd
 function! perforce#P4CallEditWithPrompt()
   let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
   if ok == 1
@@ -65,13 +72,24 @@ function! perforce#P4CallEditWithPrompt()
 endfunction
 
 function! perforce#P4CallEdit()
-  let output = system(g:vim_perforce_executable . ' edit ' . expand('%:p'))
-  let ok = matchstr(output, 'opened for edit\n$')
-  if empty(ok)
+  let output = s:P4ShellCurrentBuffer('edit')
+  "let ok = matchstr(output, 'opened for edit\n$')
+  "if empty(ok)
+  if v:shell_error != 0
     call s:err('Unable to open file for edit.')
     return 1
   endif
   setlocal noreadonly
   setlocal autoread
   call s:msg('File open for edit.')
+endfunction
+
+function! perforce#P4CallRevert()
+  let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
+  if do_revert == 1
+    let output = s:P4ShellCurrentBuffer('revert')
+    if v:shell_error != 0
+      call s:err('Unable to revert file.')
+    endif
+  endif
 endfunction
