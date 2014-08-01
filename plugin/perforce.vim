@@ -18,6 +18,13 @@ command P4Edit call perforce#P4CallEdit()
 command P4Revert call perforce#P4CallRevert()
 command P4MoveToChangelist call perforce#P4CallPromptMoveToChangelist()
 
+" Events
+
+augroup vim_perforce
+  autocmd!
+  autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
+augroup END
+
 " Utilities
 
 function! s:P4Shell(cmd)
@@ -54,13 +61,6 @@ function! s:P4ShellCurrentBuffer(cmd)
   let filename = expand('%:p')
   return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
 endfunction
-
-" Events
-
-augroup vim_perforce
-  autocmd!
-  autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
-augroup END
 
 " P4 functions
 
