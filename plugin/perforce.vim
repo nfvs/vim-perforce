@@ -16,13 +16,18 @@ endif
 command P4Info call perforce#P4CallInfo()
 command P4Edit call perforce#P4CallEdit()
 command P4Revert call perforce#P4CallRevert()
-command P4MoveToChangelist call perforce#P4CallMoveToChangelist()
+command P4MoveToChangelist call perforce#P4CallPromptMoveToChangelist()
 
 " Utilities
 
+function! s:P4Shell(cmd)
+  return system(g:vim_perforce_executable . ' ' . a:cmd)
+endfunction
+
 function! s:P4ShellCurrentBuffer(cmd)
   let filename = expand('%:p')
-  return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
+  "return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
+  return s:P4Shell(a:cmd . ' ' . filename)
 endfunction
 
 function! s:throw(string) abort
@@ -55,13 +60,13 @@ augroup END
 " P4 functions
 
 function! perforce#P4GetUser()
-  let output = s:P4ShellCurreentBuffer('info')
-  " TODO: retrieve username from output
-  "m = matchstr("User name: nsantos\nblablabla", "User name: ")
+  let output = s:P4Shell('info')
+  let m = matchlist(output, "User name: \\([a-zA-Z]\\+\\).*")
+  return m[1]
 endfunction
 
 function! perforce#P4CallInfo()
-  let output = s:P4ShellCurreentBuffer('info')
+  let output = s:P4Shell('info')
   echo output
 endfunction
 
@@ -97,31 +102,85 @@ function! perforce#P4CallRevert()
     let output = s:P4ShellCurrentBuffer('revert')
     if v:shell_error != 0
       call s:err('Unable to revert file.')
+      return 1
     endif
+    e!
   endif
 endfunction
 
-function! perforce#P4CallMoveToChangelist()
+function! perforce#P4GetUserPendingChangelists()
+  let user = perforce#P4GetUser()
+  if !empty(user)
+    let output = s:P4Shell('changes -s pending -u ' . user)
+    if v:shell_error != 0
+      return ''
+    endif
+    return output
+  endif
+endfunction
+
+" Move to changelist! Workflow:
+" 1) The P4MoveToChangelist command calls P4CallPromptMoveToChangelist, which
+" displays a new temp. buffer with a list of changelists
+" 2) By selecting one with <cr>, P4ConfirmMoveToChangelist is called, with
+" the CL string as parameter (the same string returned by p4). This string is
+" then parsed, and the CL number extracted
+" 3) P4CallMoveToChangelist is called, with the CL number as arg, which does
+" the actual moving.
+function! perforce#P4CallPromptMoveToChangelist()
+  let user = perforce#P4GetUser()
+  if empty(user)
+    call s:warn('Unable to retrieve P4 user')
+    return
+  endif
+  " Create temp buffer
   if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
-    exe "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
-    exe 'normal ggdG'
+    execute "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
+    execute 'normal ggdG'
   else
     silent! belowright new
     silent! resize 10
-    silent! setlocal buftype=nowrite bufhidden=wipe nobuflisted noswapfile nowrap nonumber
+    silent! setlocal buftype=nowrite bufhidden=wipe nobuflisted noswapfile nonumber
     let t:p4sbuf=bufnr('%')
   end
   nnoremap <buffer> <silent> q      : <C-U>bdelete!<CR>
   nnoremap <buffer> <silent> <esc>  : <C-U>bdelete!<CR>
-  nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist() <CR>
+  nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist(getline('.')) <CR>
   " Populate buffer with existing Changelists
-  " TODO:
+  let user_cls = perforce#P4GetUserPendingChangelists()
+  if empty(user_cls)
+    bdelete!
+    call s:err('Unable to retrieve list of pending changelists.')
+    return 1
+  endif
+  execute "normal! GiDefault changelist\<cr>" . user_cls . "\<esc>ddgg"
 endfunction
 
-function perforce#P4ConfirmMoveToChangelist()
-  echo 'confirm move'
-
+function! perforce#P4ConfirmMoveToChangelist(changelist_str)
+  " We have the P4 CL, now parse the CL number and close the temp buffer
   if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
     bdelete!
   endif
+  if a:changelist_str == "Default changelist"
+    call perforce#P4CallMoveToChangelist('default')
+  else
+    let m = matchlist(a:changelist_str, "Change \\([0-9]\\+\\) .*")
+    if m[1]
+      call perforce#P4CallMoveToChangelist(m[1])
+    endif
+  endif
+endfunction
+
+function! perforce#P4CallMoveToChangelist(changelist)
+  " read-only files haven't been opened yet
+  if &readonly
+    let output = s:P4ShellCurrentBuffer('edit -c ' . a:changelist)
+  else
+    let output = s:P4ShellCurrentBuffer('reopen -c ' . a:changelist)
+  endif
+  if v:shell_error != 0
+    call s:err('Unable to move file to Changelist ' . a:changelist)
+    return 1
+  endif
+  e!
 endfunction
