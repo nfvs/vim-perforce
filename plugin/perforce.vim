@@ -1,6 +1,6 @@
 " perforce.vim - Perforce
-" Author:		    Nuno Santos <https://github.com/nfvs>
-" Version:		  0.1
+" Author:       Nuno Santos <https://github.com/nfvs>
+" Version:      0.1
 
 if exists("g:vim_perforce_loaded") || &cp
   finish
