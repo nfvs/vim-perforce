@@ -19,20 +19,31 @@ command P4Revert call perforce#P4CallRevert()
 command P4MoveToChangelist call perforce#P4CallPromptMoveToChangelist()
 
 " Settings
-"
+
 " g:perforce_open_on_change (0|1, default: 0)
-"   - Try to open the file in perforce when modifying a read-only file
+" Try to open the file in perforce when modifying a read-only file
+if !exists('g:perforce_open_on_change')
+  let g:perforce_open_on_change = 0
+endif
 " g:perforce_open_on_save (0|1, default: 1)
-"   - Try to open the file in perforce when saving a read-only file (:w!)
+" Try to open the file in perforce when saving a read-only file (:w!)
+if !exists('g:perforce_open_on_save')
+  let g:perforce_open_on_save = 1
+endif
+" g:perforce_auto_source_dirs (default: [])
+" Limit auto operations to a restricted set of directories
+if !exists('g:perforce_auto_source_dirs ')
+  let g:perforce_auto_source_dirs = []
+endif
 
 " Events
 
 augroup vim_perforce
   autocmd!
-  if exists('g:perforce_open_on_change') && g:perforce_open_on_change == 1
+  if g:perforce_open_on_change == 1
     autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
   endif
-  if exists('g:perforce_open_on_save') && g:perforce_open_on_save == 1
+  if g:perforce_open_on_save == 1
     autocmd BufWritePre * nested call perforce#OnBufWriteCmd()
   endif
 augroup END
@@ -74,6 +85,23 @@ function! s:P4ShellCurrentBuffer(cmd)
   return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
 endfunction
 
+function! s:IsPathInP4(dir)
+  let a:is_inside_path = 1  " by default assume it is a P4 dir
+  if !empty(g:perforce_auto_source_dirs)
+    let a:is_inside_path = 0
+    for path in g:perforce_auto_source_dirs
+      if a:dir =~ path
+        let a:is_inside_path = 1
+        break
+      endif
+    endfor
+  endif
+  if ! a:is_inside_path
+    call s:msg('File is not under a Perforce directory.')
+  endif
+  return a:is_inside_path
+endfunction
+
 " P4 functions
 
 function! perforce#P4GetUser()
@@ -87,14 +115,18 @@ function! perforce#P4CallInfo()
   echo output
 endfunction
 
+" Called by autocmd
 function! perforce#OnBufWriteCmd()
   if &readonly
     call perforce#P4CallEditWithPrompt()
   endif
 endfunction
 
-" Should only be called from FileChangedRO autocmd
+" Called by autocmd
 function! perforce#P4CallEditWithPrompt()
+  if ! s:IsPathInP4(expand('%:p:h'))
+    return
+  endif
   let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
   if ok == 1
     let res = perforce#P4CallEdit()
