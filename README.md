@@ -4,6 +4,7 @@ Vim Perforce integration for the 21st century!
 
 No relation to [Tom Slee's](http://www.vim.org/scripts/script.php?script_id=167) or [Hari Krishna Dara's](http://vim.sourceforge.net/scripts/script.php?script_id=240) plugins.
 
+
 ## Installation
 
 Vundle is the recommended way to install vim-perforce. Add this line to your .vimrc:
@@ -12,16 +13,36 @@ Vundle is the recommended way to install vim-perforce. Add this line to your .vi
 
 Then run `:PluginInstall` inside Vim.
 
+
 ## Usage
 
-When trying to modify a read-only file, a prompt will appear to open the file in Perforce. The file will be opened in the default changelist.
+By default, when trying to save a read-only file, a prompt to open the file for edit in Perforce is displayed.
 
-Available commands:
+Additionally, the following commands are available:
 
- * `:P4Info` -- Display perforce information
- * `:P4Edit` -- Start editing the current file (opened in the default changelist)
- * `:P4Revert` -- Revert the current file
- * `:P4MoveToChangelist` -- Move the current file to a different changelist
+#### :P4Info
+Display perforce information.
+
+#### :P4Edit
+Start editing the current file (opened in the default changelist).
+
+#### :P4Revert
+Revert the current file (a confirmation prompt is displayed).
+
+#### :P4MoveToChangelist
+Move the current file to a different changelist
+
+
+## Settings
+
+The following options are available:
+
+#### g:perforce\_open\_on\_change _(default: 0)_
+Prompt to open the file for edit in Perforce when starting to modify a read-only file.
+
+#### g:perforce\_open\_on\_save _(default: 1)_
+Prompt to open the file for edit in Perforce when trying to write a read-only file (with :w!).
+
 
 ## License
 

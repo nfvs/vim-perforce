@@ -18,11 +18,23 @@ command P4Edit call perforce#P4CallEdit()
 command P4Revert call perforce#P4CallRevert()
 command P4MoveToChangelist call perforce#P4CallPromptMoveToChangelist()
 
+" Settings
+"
+" g:perforce_open_on_change (0|1, default: 0)
+"   - Try to open the file in perforce when modifying a read-only file
+" g:perforce_open_on_save (0|1, default: 1)
+"   - Try to open the file in perforce when saving a read-only file (:w!)
+
 " Events
 
 augroup vim_perforce
   autocmd!
-  autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
+  if exists('g:perforce_open_on_change') && g:perforce_open_on_change == 1
+    autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
+  endif
+  if exists('g:perforce_open_on_save') && g:perforce_open_on_save == 1
+    autocmd BufWritePre * nested call perforce#OnBufWriteCmd()
+  endif
 augroup END
 
 " Utilities
@@ -75,6 +87,12 @@ function! perforce#P4CallInfo()
   echo output
 endfunction
 
+function! perforce#OnBufWriteCmd()
+  if &readonly
+    call perforce#P4CallEditWithPrompt()
+  endif
+endfunction
+
 " Should only be called from FileChangedRO autocmd
 function! perforce#P4CallEditWithPrompt()
   let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
@@ -96,6 +114,7 @@ function! perforce#P4CallEdit()
   endif
   setlocal noreadonly
   setlocal autoread
+  setlocal modifiable
   call s:msg('File open for edit.')
 endfunction
 
