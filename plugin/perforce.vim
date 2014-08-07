@@ -13,10 +13,10 @@ endif
 
 " Available commands
 
-command P4Info call perforce#P4CallInfo()
-command P4Edit call perforce#P4CallEdit()
-command P4Revert call perforce#P4CallRevert()
-command P4MoveToChangelist call perforce#P4CallPromptMoveToChangelist()
+command P4info call perforce#P4CallInfo()
+command P4edit call perforce#P4CallEdit()
+command P4revert call perforce#P4CallRevert()
+command P4movetocl call perforce#P4CallPromptMoveToChangelist()
 
 " Settings
 

@@ -20,17 +20,17 @@ By default, when trying to save a read-only file, a prompt to open the file for 
 
 Additionally, the following commands are available:
 
-##### :P4Info
+##### :P4info
 Display perforce information.
 
-##### :P4Edit
+##### :P4edit
 Start editing the current file (opened in the default changelist).
 
-##### :P4Revert
+##### :P4revert
 Revert the current file (a confirmation prompt is displayed).
 
-##### :P4MoveToChangelist
-Move the current file to a different changelist
+##### :P4movetocl
+Move the current file to a different changelist.
 
 
 ## Settings
