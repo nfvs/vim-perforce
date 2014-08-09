@@ -107,7 +107,9 @@ endfunction
 function! perforce#P4GetUser()
   let output = s:P4Shell('info')
   let m = matchlist(output, "User name: \\([a-zA-Z]\\+\\).*")
-  return m[1]
+  if !empty(m) && !empty(m[1])
+    return m[1]
+  endif
 endfunction
 
 function! perforce#P4CallInfo()
