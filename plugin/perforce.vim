@@ -50,14 +50,17 @@ augroup END
 
 " Utilities
 
-function! s:P4Shell(cmd)
-  return system(g:vim_perforce_executable . ' ' . a:cmd)
+function! s:P4Shell(cmd, ...)
+  if a:0 > 0
+    return call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000)
+  else
+    return system(g:vim_perforce_executable . ' ' . a:cmd)
+  endif
 endfunction
 
-function! s:P4ShellCurrentBuffer(cmd)
+function! s:P4ShellCurrentBuffer(cmd, ...)
   let filename = expand('%:p')
-  "return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
-  return s:P4Shell(a:cmd . ' ' . filename)
+  return s:P4Shell(a:cmd . ' ' . filename, a:000)
 endfunction
 
 function! s:throw(string) abort
@@ -107,7 +110,7 @@ endfunction
 function! perforce#P4GetUser()
   let output = s:P4Shell('info')
   let m = matchlist(output, "User name: \\([a-zA-Z]\\+\\).*")
-  if !empty(m) && !empty(m[1])
+  if len(m) > 1 && !empty(m[1])
     return m[1]
   endif
 endfunction
@@ -219,7 +222,7 @@ function! perforce#P4CallPromptMoveToChangelist()
     call s:err('Unable to retrieve list of pending changelists.')
     return 1
   endif
-  execute "normal! GiDefault changelist\<cr>" . user_cls . "\<esc>ddgg"
+  execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg"
 endfunction
 
 function! perforce#P4ConfirmMoveToChangelist(changelist_str)
@@ -227,13 +230,27 @@ function! perforce#P4ConfirmMoveToChangelist(changelist_str)
   if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
     bdelete!
   endif
-  if a:changelist_str == "Default changelist"
-    call perforce#P4CallMoveToChangelist('default')
+  let target_cl = ""
+  if a:changelist_str == "default"
+    let target_cl = 'default'
+  elseif a:changelist_str == "New changelist"
+    call inputsave()
+    let new_cl_description = input('Enter new Changelist name: ')
+    call inputrestore()
+    redraw
+    if empty(new_cl_description)
+      call s:warn('No changelist description entered, aborting.')
+      return
+    endif
+    let target_cl = perforce#P4CreateChangelist(new_cl_description)
   else
     let m = matchlist(a:changelist_str, "Change \\([0-9]\\+\\) .*")
-    if m[1]
-      call perforce#P4CallMoveToChangelist(m[1])
+    if len(m) > 1 && !empty(m[1])
+      let target_cl = m[1]
     endif
+  endif
+  if !empty(target_cl)
+    call perforce#P4CallMoveToChangelist(target_cl)
   endif
 endfunction
 
@@ -249,4 +266,20 @@ function! perforce#P4CallMoveToChangelist(changelist)
     return 1
   endif
   e!
+endfunction
+
+function! perforce#P4CreateChangelist(description)
+  let tmp = s:P4Shell('change -o')
+  let new_cl_data = substitute(tmp, '<enter description here>', a:description, 'g')
+  let res = s:P4Shell('change -i', new_cl_data)
+  if v:shell_error != 0
+    call s:err('Error creating new changelist.')
+    return ''
+  endif
+  let new_cl = matchlist(res, "Change \\([0-9]\\+\\) created\\.")
+  if len(new_cl) > 1 && !empty(new_cl[1])
+    call s:msg('Changelist ' . new_cl[1] . ' created.')
+    return new_cl[1]
+  endif
+  return ''
 endfunction
