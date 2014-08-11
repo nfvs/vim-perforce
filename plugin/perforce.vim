@@ -207,9 +207,9 @@ function! perforce#P4CallPromptMoveToChangelist()
     execute "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
     execute 'normal ggdG'
   else
-    silent! belowright new
+    silent! belowright new Move to changelist
     silent! resize 10
-    silent! setlocal buftype=nowrite bufhidden=wipe nobuflisted noswapfile nonumber
+    silent! setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile nonumber
     let t:p4sbuf=bufnr('%')
   end
   nnoremap <buffer> <silent> q      : <C-U>bdelete!<CR>
@@ -222,7 +222,7 @@ function! perforce#P4CallPromptMoveToChangelist()
     call s:err('Unable to retrieve list of pending changelists.')
     return 1
   endif
-  execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg"
+  execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg2gg"
 endfunction
 
 function! perforce#P4ConfirmMoveToChangelist(changelist_str)
