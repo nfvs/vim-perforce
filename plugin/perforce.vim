@@ -202,6 +202,12 @@ function! perforce#P4CallPromptMoveToChangelist()
     call s:warn('Unable to retrieve P4 user')
     return
   endif
+  let user_cls = perforce#P4GetUserPendingChangelists()
+  if empty(user_cls)
+    bdelete!
+    call s:err('Unable to retrieve list of pending changelists.')
+    return 1
+  endif
   " Create temp buffer
   if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
     execute "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
@@ -216,13 +222,8 @@ function! perforce#P4CallPromptMoveToChangelist()
   nnoremap <buffer> <silent> <esc>  : <C-U>bdelete!<CR>
   nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist(getline('.')) <CR>
   " Populate buffer with existing Changelists
-  let user_cls = perforce#P4GetUserPendingChangelists()
-  if empty(user_cls)
-    bdelete!
-    call s:err('Unable to retrieve list of pending changelists.')
-    return 1
-  endif
   execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg2gg"
+  silent! setlocal nowrite nomodifiable
 endfunction
 
 function! perforce#P4ConfirmMoveToChangelist(changelist_str)
