@@ -271,13 +271,16 @@ endfunction
 
 function! perforce#P4CreateChangelist(description)
   let tmp = s:P4Shell('change -o')
+  " Insert description, and remove existing files, since by default p4 adds
+  " all existing files in the default CL to the new CL
   let new_cl_data = substitute(tmp, '<enter description here>', a:description, 'g')
+  let new_cl_data = substitute(new_cl_data, 'Files:\n\(\s\+[^\n]*\n\)\+\n', '', '')
   let res = s:P4Shell('change -i', new_cl_data)
   if v:shell_error != 0
     call s:err('Error creating new changelist.')
     return ''
   endif
-  let new_cl = matchlist(res, "Change \\([0-9]\\+\\) created\\.")
+  let new_cl = matchlist(res, 'Change \([0-9]\+\) created\.')
   if len(new_cl) > 1 && !empty(new_cl[1])
     call s:msg('Changelist ' . new_cl[1] . ' created.')
     return new_cl[1]
