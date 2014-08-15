@@ -195,10 +195,6 @@ endfunction
 " 3) P4CallMoveToChangelist is called, with the CL number as arg, which does
 " the actual moving.
 function! perforce#P4CallPromptMoveToChangelist()
-  " TODO: check if the file has unsaved changes, fail if it does
-  "if &modified
-  "  call s:warn('File has unsaved changes, save them before')
-  "endif
   let user = perforce#P4GetUser()
   if empty(user)
     call s:warn('Unable to retrieve P4 user')
