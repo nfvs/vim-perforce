@@ -160,7 +160,7 @@ function! perforce#P4CallRevert()
     return
   endif
   " If the file hasn't changed (no output), don't ask for confirmation
-  if empty(output)
+  if empty(output) && !&modified
     let do_revert = 1
   else
     let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
@@ -221,7 +221,7 @@ function! perforce#P4CallPromptMoveToChangelist()
   nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist(getline('.')) <CR>
   " Populate buffer with existing Changelists
   execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg2gg"
-  silent! setlocal nowrite nomodifiable
+  silent! setlocal nowrite autoread nomodifiable
 endfunction
 
 function! perforce#P4ConfirmMoveToChangelist(changelist_str)
