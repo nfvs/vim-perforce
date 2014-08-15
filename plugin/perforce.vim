@@ -149,9 +149,7 @@ function! perforce#P4CallEdit()
     call s:err('Unable to open file for edit.')
     return 1
   endif
-  setlocal noreadonly
-  setlocal autoread
-  setlocal modifiable
+  silent! setlocal noreadonly autoread modifiable
   call s:msg('File open for edit.')
 endfunction
 
@@ -197,6 +195,10 @@ endfunction
 " 3) P4CallMoveToChangelist is called, with the CL number as arg, which does
 " the actual moving.
 function! perforce#P4CallPromptMoveToChangelist()
+  " TODO: check if the file has unsaved changes, fail if it does
+  "if &modified
+  "  call s:warn('File has unsaved changes, save them before')
+  "endif
   let user = perforce#P4GetUser()
   if empty(user)
     call s:warn('Unable to retrieve P4 user')
@@ -266,7 +268,7 @@ function! perforce#P4CallMoveToChangelist(changelist)
     call s:err('Unable to move file to Changelist ' . a:changelist)
     return 1
   endif
-  e!
+  silent! setlocal noreadonly modifiable
 endfunction
 
 function! perforce#P4CreateChangelist(description)
