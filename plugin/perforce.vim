@@ -2,6 +2,10 @@
 " Author:       Nuno Santos <https://github.com/nfvs>
 " Version:      0.1
 
+" Enable autoread, as P4 changes files attributes, and without it we may not
+" be able to catch all FileChangedRO events.
+set autoread
+
 if exists("g:vim_perforce_loaded") || &cp
   finish
 endif
