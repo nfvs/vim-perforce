@@ -51,4 +51,4 @@ Restrict Perforce automatic operations (save/change read-only files) to a limite
 
 ## License
 
-Copyright (C) Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
+Copyright (C) 2014 Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
