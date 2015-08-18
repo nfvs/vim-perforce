@@ -233,7 +233,7 @@ function! perforce#P4CallPromptMoveToChangelist()
     execute "keepjumps " . bufwinnr(t:p4sbuf) . "wincmd W"
     execute 'normal ggdG'
   else
-    silent! belowright new Move to changelist
+    silent! belowright new 'Move to changelist'
     silent! resize 10
     silent! setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile nonumber
     let t:p4sbuf=bufnr('%')
