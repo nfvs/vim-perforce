@@ -54,4 +54,4 @@ Send relative file paths to Perforce so it can automatically detect which root t
 
 ## License
 
-Copyright (C) 2014 Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
+Copyright (C) 2015 Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
