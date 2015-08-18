@@ -39,6 +39,11 @@ endif
 if !exists('g:perforce_auto_source_dirs ')
   let g:perforce_auto_source_dirs = []
 endif
+" g:perforce_use_relative_paths (0|1, default: 0)
+" Use relative paths as arguments to perforce
+if !exists('g:perforce_use_relative_paths')
+  let g:perforce_use_relative_paths = 0
+endif
 
 " Events
 
@@ -63,7 +68,11 @@ function! s:P4Shell(cmd, ...)
 endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
-  let filename = expand('%:p')
+  if g:perforce_use_relative_paths == 1
+    let filename = expand('%')
+  else
+    let filename = expand('%:p')
+  endif
   return s:P4Shell(a:cmd . ' ' . filename, a:000)
 endfunction
 
@@ -88,7 +97,11 @@ function! s:err(str) abort
 endfunction
 
 function! s:P4ShellCurrentBuffer(cmd)
-  let filename = expand('%:p')
+  if g:perforce_use_relative_paths == 1
+    let filename = expand('%')
+  else
+    let filename = expand('%:p')
+  endif
   return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
 endfunction
 
@@ -133,7 +146,12 @@ endfunction
 
 " Called by autocmd
 function! perforce#P4CallEditWithPrompt()
-  if ! s:IsPathInP4(expand('%:p:h'))
+  if g:perforce_use_relative_paths == 1
+    let path = expand('%:h')
+  else
+    let path = expand('%:p:h')
+  endif
+  if ! s:IsPathInP4(path)
     return
   endif
   let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
