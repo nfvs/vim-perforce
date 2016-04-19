@@ -44,13 +44,22 @@ endif
 if !exists('g:perforce_use_relative_paths')
   let g:perforce_use_relative_paths = 0
 endif
+" g:perforce_prompt_on_open
+" Prompt when a file is opened either on change or on save
+if !exists('g:perforce_prompt_on_open')
+  let g:perforce_prompt_on_open = 1
+endif
 
 " Events
 
 augroup vim_perforce
   autocmd!
   if g:perforce_open_on_change == 1
-    autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
+    if g:perforce_prompt_on_open == 1
+      autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
+    else
+      autocmd FileChangedRO * nested call perforce#P4CallEdit()
+    endif
   endif
   if g:perforce_open_on_save == 1
     autocmd BufWritePre * nested call perforce#OnBufWriteCmd()
@@ -140,7 +149,11 @@ endfunction
 " Called by autocmd
 function! perforce#OnBufWriteCmd()
   if &readonly
-    call perforce#P4CallEditWithPrompt()
+    if g:perforce_prompt_on_open == 1
+      call perforce#P4CallEditWithPrompt()
+    else
+      call perforce#P4CallEdit()
+    endif
   endif
 endfunction
 
