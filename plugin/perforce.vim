@@ -54,14 +54,14 @@ endif
 
 augroup vim_perforce
   autocmd!
-  if g:perforce_open_on_change == 1
-    if g:perforce_prompt_on_open == 1
+  if g:perforce_open_on_change
+    if g:perforce_prompt_on_open
       autocmd FileChangedRO * nested call perforce#P4CallEditWithPrompt()
     else
       autocmd FileChangedRO * nested call perforce#P4CallEdit()
     endif
   endif
-  if g:perforce_open_on_save == 1
+  if g:perforce_open_on_save
     autocmd BufWritePre * nested call perforce#OnBufWriteCmd()
   endif
 augroup END
@@ -77,12 +77,12 @@ function! s:P4Shell(cmd, ...)
 endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
-  if g:perforce_use_relative_paths == 1
+  if g:perforce_use_relative_paths
     let filename = expand('%')
   else
     let filename = expand('%:p')
   endif
-  return s:P4Shell(a:cmd . ' ' . filename, a:000)
+  return s:P4Shell(a:cmd . ' ' . shellescape(filename), a:000)
 endfunction
 
 function! s:throw(string) abort
@@ -103,15 +103,6 @@ endfunction
 
 function! s:err(str) abort
   echoerr 'vim-perforce: ' . a:str
-endfunction
-
-function! s:P4ShellCurrentBuffer(cmd)
-  if g:perforce_use_relative_paths == 1
-    let filename = expand('%')
-  else
-    let filename = expand('%:p')
-  endif
-  return system(g:vim_perforce_executable . ' ' . a:cmd . ' ' . filename)
 endfunction
 
 function! s:IsPathInP4(dir)
@@ -149,7 +140,7 @@ endfunction
 " Called by autocmd
 function! perforce#OnBufWriteCmd()
   if &readonly
-    if g:perforce_prompt_on_open == 1
+    if g:perforce_prompt_on_open
       call perforce#P4CallEditWithPrompt()
     else
       call perforce#P4CallEdit()
@@ -159,7 +150,7 @@ endfunction
 
 " Called by autocmd
 function! perforce#P4CallEditWithPrompt()
-  if g:perforce_use_relative_paths == 1
+  if g:perforce_use_relative_paths
     let path = expand('%:h')
   else
     let path = expand('%:p:h')
@@ -168,11 +159,11 @@ function! perforce#P4CallEditWithPrompt()
     return
   endif
   let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
-  if ok == 1
+  if ok
     let res = perforce#P4CallEdit()
     " We need to redraw in case of an error, to dismiss the
     " W10 warning 'editing a read-only file'.
-    if res != 1
+    if !res
       redraw
     endif
   endif
@@ -180,7 +171,7 @@ endfunction
 
 function! perforce#P4CallEdit()
   let output = s:P4ShellCurrentBuffer('edit')
-  if v:shell_error != 0
+  if v:shell_error
     call s:err('Unable to open file for edit.')
     return 1
   endif
@@ -200,13 +191,18 @@ function! perforce#P4CallRevert()
   else
     let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
   endif
-  if do_revert == 1
-    let output = s:P4ShellCurrentBuffer('revert')
-    if v:shell_error != 0
-      call s:err('Unable to revert file.')
-      return 1
-    endif
-    e!
+  if !do_revert
+    return
+  endif
+  let output = s:P4ShellCurrentBuffer('revert')
+  if !empty(matchstr(output, "not opened on this client"))
+    call s:warn('File not opened for edit.')
+  elseif v:shell_error
+    call s:err('Unable to revert file.')
+    return 1
+  else
+    call s:msg('File reverted.')
+    silent! e!
   endif
 endfunction
 
@@ -214,7 +210,7 @@ function! perforce#P4GetUserPendingChangelists()
   let user = perforce#P4GetUser()
   if !empty(user)
     let output = s:P4Shell('changes -s pending -u ' . user)
-    if v:shell_error != 0
+    if v:shell_error
       return ''
     endif
     return output
@@ -295,7 +291,7 @@ function! perforce#P4CallMoveToChangelist(changelist)
   else
     let output = s:P4ShellCurrentBuffer('reopen -c ' . a:changelist)
   endif
-  if v:shell_error != 0
+  if v:shell_error
     call s:err('Unable to move file to Changelist ' . a:changelist)
     return 1
   endif
@@ -309,7 +305,7 @@ function! perforce#P4CreateChangelist(description)
   let new_cl_data = substitute(tmp, '<enter description here>', a:description, 'g')
   let new_cl_data = substitute(new_cl_data, 'Files:\n\(\s\+[^\n]*\n\)\+\n', '', '')
   let res = s:P4Shell('change -i', new_cl_data)
-  if v:shell_error != 0
+  if v:shell_error
     call s:err('Error creating new changelist.')
     return ''
   endif
