@@ -56,4 +56,4 @@ Whether to prompt the user when a file is open for edit (either on change or on 
 
 ## License
 
-Copyright (C) 2015 Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
+Copyright (C) Nuno Santos. Distributed under the same terms as Vim itself. See `:help license`.
