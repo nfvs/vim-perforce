@@ -69,11 +69,7 @@ augroup END
 " Utilities
 
 function! s:P4Shell(cmd, ...)
-  if a:0 > 0
-    return call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000)
-  else
-    return system(g:vim_perforce_executable . ' ' . a:cmd)
-  endif
+  return call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000)
 endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
@@ -82,7 +78,7 @@ function! s:P4ShellCurrentBuffer(cmd, ...)
   else
     let filename = expand('%:p')
   endif
-  return s:P4Shell(a:cmd . ' ' . shellescape(filename), a:000)
+  return call('s:P4Shell', [a:cmd . ' ' . shellescape(filename)] + a:000)
 endfunction
 
 function! s:throw(string) abort
@@ -155,6 +151,7 @@ function! perforce#P4CallEditWithPrompt()
   else
     let path = expand('%:p:h')
   endif
+  path = shellescape(path)
   if ! s:IsPathInP4(path)
     return
   endif
@@ -181,7 +178,7 @@ endfunction
 
 function! perforce#P4CallRevert()
   let output = s:P4ShellCurrentBuffer('diff -f -sa')
-  if !empty(matchstr(output, "not under client\'s root"))
+  if !empty(matchstr(output, "not under client\'s root")) || !empty(matchstr(output, "not on client"))
     call s:warn('File not under P4.')
     return
   endif
