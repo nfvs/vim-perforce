@@ -74,11 +74,11 @@ endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
   if g:perforce_use_relative_paths
-    let filename = expand('%')
+    let filename = shellescape(expand('%'))
   else
-    let filename = expand('%:p')
+    let filename = shellescape(expand('%:p'))
   endif
-  return call('s:P4Shell', [a:cmd . ' ' . shellescape(filename)] + a:000)
+  return call('s:P4Shell', [a:cmd . ' ' . filename] + a:000)
 endfunction
 
 function! s:throw(string) abort
@@ -147,11 +147,10 @@ endfunction
 " Called by autocmd
 function! perforce#P4CallEditWithPrompt()
   if g:perforce_use_relative_paths
-    let path = expand('%:h')
+    let path = shellescape(expand('%:h'))
   else
-    let path = expand('%:p:h')
+    let path = shellescape(expand('%:p:h'))
   endif
-  path = shellescape(path)
   if ! s:IsPathInP4(path)
     return
   endif
