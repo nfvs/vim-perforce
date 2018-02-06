@@ -154,7 +154,7 @@ function! perforce#P4CallEditWithPrompt()
   if ! s:IsPathInP4(path)
     return
   endif
-  let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question')
+  let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question') == 1
   if ok
     let res = perforce#P4CallEdit()
     " We need to redraw in case of an error, to dismiss the
@@ -185,7 +185,7 @@ function! perforce#P4CallRevert()
   if empty(output) && !&modified
     let do_revert = 1
   else
-    let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question')
+    let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question') == 1
   endif
   if !do_revert
     return
