@@ -91,7 +91,7 @@ function! s:P4OutputHasError(output)
   if !empty(matchstr(a:output, "not under client\'s root")) || !empty(matchstr(a:output, "not on client"))
     call s:warn("File not under perforce client\'s root.")
     return 1
-  elseif !empty(matchstr(a:outputoutput, "not opened on this client"))
+  elseif !empty(matchstr(a:output, "not opened on this client"))
     call s:warn('File not opened for edit.')
     return 1
   endif
@@ -196,7 +196,7 @@ endfunction
 
 function! perforce#P4CallEdit()
   let output = s:P4ShellCurrentBuffer('edit')
-  if s:P4OutputHasError(output)
+  if s:P4OutputHasError(output) == 1
     return 1
   endif
   if v:shell_error
@@ -209,7 +209,7 @@ endfunction
 
 function! perforce#P4CallRevert()
   let output = s:P4ShellCurrentBuffer('diff -f -sa')
-  if s:P4OutputHasError(output)
+  if s:P4OutputHasError(output) == 1
     return 1
   endif
   " If the file hasn't changed (no output), don't ask for confirmation
@@ -222,7 +222,7 @@ function! perforce#P4CallRevert()
     return
   endif
   let output = s:P4ShellCurrentBuffer('revert')
-  if call s:P4OutputHasError(output) == 1
+  if s:P4OutputHasError(output) == 1
     return 1
   elseif v:shell_error
     call s:err('Unable to revert file.', output)
