@@ -75,16 +75,27 @@ augroup END
 
 function! s:P4Shell(cmd, ...)
   call s:debug(g:vim_perforce_executable . ' ' . a:cmd . ' ' . join(a:000, " "))
-  return call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000)
+  return substitute(call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000), '\_s*$', '', '')
 endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
   if g:perforce_use_relative_paths
-    let filename = shellescape(expand('%'))
+    let filename = expand('%')
   else
-    let filename = shellescape(expand('%:p'))
+    let filename = expand('%:p')
   endif
-  return call('s:P4Shell', [a:cmd . ' ' . filename] + a:000)
+  return call('s:P4Shell', [a:cmd . ' ' . shellescape(filename)] + a:000)
+endfunction
+
+function! s:P4OutputHasError(output)
+  if !empty(matchstr(a:output, "not under client\'s root")) || !empty(matchstr(a:output, "not on client"))
+    call s:warn("File not under perforce client\'s root.")
+    return 1
+  elseif !empty(matchstr(a:outputoutput, "not opened on this client"))
+    call s:warn('File not opened for edit.')
+    return 1
+  endif
+  return 0
 endfunction
 
 function! s:throw(string) abort
@@ -92,19 +103,25 @@ function! s:throw(string) abort
   throw v:errmsg
 endfunction
 
-function! s:msg(string) abort
-  echomsg 'vim-perforce: ' . a:string
+function! s:msg(...) abort
+  for message in a:000
+    echomsg 'vim-perforce: ' . message
+  endfor
 endfunction
 
-function! s:warn(str) abort
+function! s:warn(...) abort
   echohl WarningMsg
-  echomsg 'vim-perforce: ' . a:str
+  for message in a:000
+    echomsg 'vim-perforce: ' . message
+  endfor
   echohl None
-  let v:warningmsg = a:str
+  let v:warningmsg = a:000[0]
 endfunction
 
-function! s:err(str) abort
-  echoerr 'vim-perforce: ' . a:str
+function! s:err(...) abort
+  for message in a:000
+    echoerr 'vim-perforce: ' . message
+  endfor
 endfunction
 
 function! s:debug(string) abort
@@ -118,7 +135,7 @@ function! s:IsPathInP4(dir)
   if !empty(g:perforce_auto_source_dirs)
     let a:is_inside_path = 0
     for path in g:perforce_auto_source_dirs
-      if a:dir =~ path
+      if path =~ a:dir || shellescape(a:dir) =~ shellescape(path)
         let a:is_inside_path = 1
         break
       endif
@@ -159,9 +176,9 @@ endfunction
 " Called by autocmd
 function! perforce#P4CallEditWithPrompt()
   if g:perforce_use_relative_paths
-    let path = shellescape(expand('%:h'))
+    let path = expand('%:h')
   else
-    let path = shellescape(expand('%:p:h'))
+    let path = expand('%:p:h')
   endif
   if ! s:IsPathInP4(path)
     return
@@ -179,8 +196,11 @@ endfunction
 
 function! perforce#P4CallEdit()
   let output = s:P4ShellCurrentBuffer('edit')
+  if s:P4OutputHasError(output)
+    return 1
+  endif
   if v:shell_error
-    call s:err('Unable to open file for edit.')
+    call s:err('Unable to open file for edit.', output)
     return 1
   endif
   silent! setlocal noreadonly autoread modifiable
@@ -189,9 +209,8 @@ endfunction
 
 function! perforce#P4CallRevert()
   let output = s:P4ShellCurrentBuffer('diff -f -sa')
-  if !empty(matchstr(output, "not under client\'s root")) || !empty(matchstr(output, "not on client"))
-    call s:warn('File not under P4.')
-    return
+  if s:P4OutputHasError(output)
+    return 1
   endif
   " If the file hasn't changed (no output), don't ask for confirmation
   if empty(output) && !&modified
@@ -203,10 +222,10 @@ function! perforce#P4CallRevert()
     return
   endif
   let output = s:P4ShellCurrentBuffer('revert')
-  if !empty(matchstr(output, "not opened on this client"))
-    call s:warn('File not opened for edit.')
+  if call s:P4OutputHasError(output) == 1
+    return 1
   elseif v:shell_error
-    call s:err('Unable to revert file.')
+    call s:err('Unable to revert file.', output)
     return 1
   else
     call s:msg('File reverted.')
