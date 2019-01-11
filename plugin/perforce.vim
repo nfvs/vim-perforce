@@ -49,6 +49,11 @@ endif
 if !exists('g:perforce_prompt_on_open')
   let g:perforce_prompt_on_open = 1
 endif
+" g:perforce_debug
+" Print debugging information
+if !exists('g:perforce_debug')
+  let g:perforce_debug = 0
+endif
 
 " Events
 
@@ -69,6 +74,7 @@ augroup END
 " Utilities
 
 function! s:P4Shell(cmd, ...)
+  call s:debug(g:vim_perforce_executable . ' ' . a:cmd . ' ' . join(a:000, " "))
   return call('system', [g:vim_perforce_executable . ' ' . a:cmd] + a:000)
 endfunction
 
@@ -99,6 +105,12 @@ endfunction
 
 function! s:err(str) abort
   echoerr 'vim-perforce: ' . a:str
+endfunction
+
+function! s:debug(string) abort
+  if g:perforce_debug
+    echomsg 'vim-perforce: ' . a:string
+  endif
 endfunction
 
 function! s:IsPathInP4(dir)
