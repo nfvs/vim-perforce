@@ -135,7 +135,7 @@ function! s:IsPathInP4(dir)
   if !empty(g:perforce_auto_source_dirs)
     let a:is_inside_path = 0
     for path in g:perforce_auto_source_dirs
-      if path =~ a:dir || shellescape(a:dir) =~ shellescape(path)
+      if a:dir =~ path || shellescape(a:dir) =~ shellescape(path)
         let a:is_inside_path = 1
         break
       endif
