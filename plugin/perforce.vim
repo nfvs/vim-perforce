@@ -80,11 +80,11 @@ endfunction
 
 function! s:P4ShellCurrentBuffer(cmd, ...)
   if g:perforce_use_relative_paths
-    let filename = expand('%')
+    let l:filename = expand('%')
   else
-    let filename = expand('%:p')
+    let l:filename = expand('%:p')
   endif
-  return call('s:P4Shell', [a:cmd . ' ' . shellescape(filename)] + a:000)
+  return call('s:P4Shell', [a:cmd . ' ' . shellescape(l:filename)] + a:000)
 endfunction
 
 function! s:P4OutputHasError(output)
@@ -104,23 +104,23 @@ function! s:throw(string) abort
 endfunction
 
 function! s:msg(...) abort
-  for message in a:000
-    echomsg 'vim-perforce: ' . message
+  for l:message in a:000
+    echomsg 'vim-perforce: ' . l:message
   endfor
 endfunction
 
 function! s:warn(...) abort
   echohl WarningMsg
-  for message in a:000
-    echomsg 'vim-perforce: ' . message
+  for l:message in a:000
+    echomsg 'vim-perforce: ' . l:message
   endfor
   echohl None
   let v:warningmsg = a:000[0]
 endfunction
 
 function! s:err(...) abort
-  for message in a:000
-    echoerr 'vim-perforce: ' . message
+  for l:message in a:000
+    echoerr 'vim-perforce: ' . l:message
   endfor
 endfunction
 
@@ -131,35 +131,35 @@ function! s:debug(string) abort
 endfunction
 
 function! s:IsPathInP4(dir)
-  let a:is_inside_path = 1  " by default assume it is a P4 dir
+  let l:is_inside_path = 1  " by default assume it is a P4 dir
   if !empty(g:perforce_auto_source_dirs)
-    let a:is_inside_path = 0
-    for path in g:perforce_auto_source_dirs
-      if a:dir =~ path || shellescape(a:dir) =~ shellescape(path)
-        let a:is_inside_path = 1
+    let l:is_inside_path = 0
+    for l:path in g:perforce_auto_source_dirs
+      if a:dir =~ l:path || shellescape(a:dir) =~ shellescape(l:path)
+        let l:is_inside_path = 1
         break
       endif
     endfor
   endif
-  if ! a:is_inside_path
+  if ! l:is_inside_path
     call s:msg('File is not under a Perforce directory.')
   endif
-  return a:is_inside_path
+  return l:is_inside_path
 endfunction
 
 " P4 functions
 
 function! perforce#P4GetUser()
-  let output = s:P4Shell('info')
-  let m = matchlist(output, "User name: \\([a-zA-Z]\\+\\).*")
-  if len(m) > 1 && !empty(m[1])
-    return m[1]
+  let l:output = s:P4Shell('info')
+  let l:m = matchlist(output, "User name: \\([a-zA-Z]\\+\\).*")
+  if len(l:m) > 1 && !empty(l:m[1])
+    return l:m[1]
   endif
 endfunction
 
 function! perforce#P4CallInfo()
-  let output = s:P4Shell('info')
-  echo output
+  let l:output = s:P4Shell('info')
+  echo l:output
 endfunction
 
 " Called by autocmd
@@ -176,16 +176,16 @@ endfunction
 " Called by autocmd
 function! perforce#P4CallEditWithPrompt()
   if g:perforce_use_relative_paths
-    let path = expand('%:h')
+    let l:path = expand('%:h')
   else
-    let path = expand('%:p:h')
+    let l:path = expand('%:p:h')
   endif
-  if ! s:IsPathInP4(path)
+  if ! s:IsPathInP4(l:path)
     return
   endif
-  let ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question') == 1
-  if ok
-    let res = perforce#P4CallEdit()
+  let l:ok = confirm('File is read only. Attempt to open in Perforce?', "&Yes\n&No", 1, 'Question') == 1
+  if l:ok
+    let l:res = perforce#P4CallEdit()
     " We need to redraw in case of an error, to dismiss the
     " W10 warning 'editing a read-only file'.
     if !res
@@ -195,12 +195,12 @@ function! perforce#P4CallEditWithPrompt()
 endfunction
 
 function! perforce#P4CallEdit()
-  let output = s:P4ShellCurrentBuffer('edit')
-  if s:P4OutputHasError(output) == 1
+  let l:output = s:P4ShellCurrentBuffer('edit')
+  if s:P4OutputHasError(l:output) == 1
     return 1
   endif
   if v:shell_error
-    call s:err('Unable to open file for edit.', output)
+    call s:err('Unable to open file for edit.', l:output)
     return 1
   endif
   silent! setlocal noreadonly autoread modifiable
@@ -208,24 +208,24 @@ function! perforce#P4CallEdit()
 endfunction
 
 function! perforce#P4CallRevert()
-  let output = s:P4ShellCurrentBuffer('diff -f -sa')
-  if s:P4OutputHasError(output) == 1
+  let l:output = s:P4ShellCurrentBuffer('diff -f -sa')
+  if s:P4OutputHasError(l:output) == 1
     return 1
   endif
   " If the file hasn't changed (no output), don't ask for confirmation
-  if empty(output) && !&modified
-    let do_revert = 1
+  if empty(l:output) && !&modified
+    let l:do_revert = 1
   else
-    let do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question') == 1
+    let l:do_revert = confirm('Revert this file in Perforce and lose all changes?', "&Yes\n&No", 2, 'Question') == 1
   endif
-  if !do_revert
+  if !l:do_revert
     return
   endif
-  let output = s:P4ShellCurrentBuffer('revert')
-  if s:P4OutputHasError(output) == 1
+  let l:output = s:P4ShellCurrentBuffer('revert')
+  if s:P4OutputHasError(l:output) == 1
     return 1
   elseif v:shell_error
-    call s:err('Unable to revert file.', output)
+    call s:err('Unable to revert file.', l:output)
     return 1
   else
     call s:msg('File reverted.')
@@ -234,13 +234,13 @@ function! perforce#P4CallRevert()
 endfunction
 
 function! perforce#P4GetUserPendingChangelists()
-  let user = perforce#P4GetUser()
+  let l:user = perforce#P4GetUser()
   if !empty(user)
-    let output = s:P4Shell('changes -s pending -u ' . user)
+    let l:output = s:P4Shell('changes -s pending -u ' . l:user)
     if v:shell_error
       return ''
     endif
-    return output
+    return l:output
   endif
 endfunction
 
@@ -253,13 +253,13 @@ endfunction
 " 3) P4CallMoveToChangelist is called, with the CL number as arg, which does
 " the actual moving.
 function! perforce#P4CallPromptMoveToChangelist()
-  let user = perforce#P4GetUser()
-  if empty(user)
+  let l:user = perforce#P4GetUser()
+  if empty(l:user)
     call s:warn('Unable to retrieve P4 user')
     return
   endif
-  let user_cls = perforce#P4GetUserPendingChangelists()
-  if empty(user_cls)
+  let l:user_cls = perforce#P4GetUserPendingChangelists()
+  if empty(l:user_cls)
     bdelete!
     call s:err('Unable to retrieve list of pending changelists.')
     return 1
@@ -278,7 +278,7 @@ function! perforce#P4CallPromptMoveToChangelist()
   nnoremap <buffer> <silent> <esc>  : <C-U>bdelete!<CR>
   nnoremap <buffer> <silent> <CR>   : exe perforce#P4ConfirmMoveToChangelist(getline('.')) <CR>
   " Populate buffer with existing Changelists
-  execute "normal! GiNew changelist\<cr>default\<cr>" . user_cls . "\<esc>ddgg2gg"
+  execute "normal! GiNew changelist\<cr>default\<cr>" . l:user_cls . "\<esc>ddgg2gg"
   silent! setlocal nowrite autoread nomodifiable
 endfunction
 
@@ -287,36 +287,36 @@ function! perforce#P4ConfirmMoveToChangelist(changelist_str)
   if exists("t:p4sbuf") && bufwinnr(t:p4sbuf) > 0
     bdelete!
   endif
-  let target_cl = ""
+  let l:target_cl = ""
   if a:changelist_str == "default"
-    let target_cl = 'default'
+    let l:target_cl = 'default'
   elseif a:changelist_str == "New changelist"
     call inputsave()
-    let new_cl_description = input('Enter new Changelist name: ')
+    let l:new_cl_description = input('Enter new Changelist name: ')
     call inputrestore()
     redraw
-    if empty(new_cl_description)
+    if empty(l:new_cl_description)
       call s:warn('No changelist description entered, aborting.')
       return
     endif
-    let target_cl = perforce#P4CreateChangelist(new_cl_description)
+    let target_cl = perforce#P4CreateChangelist(l:new_cl_description)
   else
-    let m = matchlist(a:changelist_str, "Change \\([0-9]\\+\\) .*")
-    if len(m) > 1 && !empty(m[1])
-      let target_cl = m[1]
+    let l:m = matchlist(a:changelist_str, "Change \\([0-9]\\+\\) .*")
+    if len(l:m) > 1 && !empty(l:m[1])
+      let target_cl = l:m[1]
     endif
   endif
-  if !empty(target_cl)
-    call perforce#P4CallMoveToChangelist(target_cl)
+  if !empty(l:target_cl)
+    call perforce#P4CallMoveToChangelist(l:target_cl)
   endif
 endfunction
 
 function! perforce#P4CallMoveToChangelist(changelist)
   " read-only files haven't been opened yet
   if &readonly
-    let output = s:P4ShellCurrentBuffer('edit -c ' . a:changelist)
+    let l:output = s:P4ShellCurrentBuffer('edit -c ' . a:changelist)
   else
-    let output = s:P4ShellCurrentBuffer('reopen -c ' . a:changelist)
+    let l:output = s:P4ShellCurrentBuffer('reopen -c ' . a:changelist)
   endif
   if v:shell_error
     call s:err('Unable to move file to Changelist ' . a:changelist)
@@ -326,20 +326,20 @@ function! perforce#P4CallMoveToChangelist(changelist)
 endfunction
 
 function! perforce#P4CreateChangelist(description)
-  let tmp = s:P4Shell('change -o')
+  let l:tmp = s:P4Shell('change -o')
   " Insert description, and remove existing files, since by default p4 adds
   " all existing files in the default CL to the new CL
-  let new_cl_data = substitute(tmp, '<enter description here>', a:description, 'g')
-  let new_cl_data = substitute(new_cl_data, 'Files:\n\(\s\+[^\n]*\n\)\+\n', '', '')
-  let res = s:P4Shell('change -i', new_cl_data)
+  let l:new_cl_data = substitute(l:tmp, '<enter description here>', a:description, 'g')
+  let l:new_cl_data = substitute(l:new_cl_data, 'Files:\n\(\s\+[^\n]*\n\)\+\n', '', '')
+  let l:res = s:P4Shell('change -i', l:new_cl_data)
   if v:shell_error
     call s:err('Error creating new changelist.')
     return ''
   endif
-  let new_cl = matchlist(res, 'Change \([0-9]\+\) created\.')
-  if len(new_cl) > 1 && !empty(new_cl[1])
-    call s:msg('Changelist ' . new_cl[1] . ' created.')
-    return new_cl[1]
+  let l:new_cl = matchlist(l:res, 'Change \([0-9]\+\) created\.')
+  if len(l:new_cl) > 1 && !empty(l:new_cl[1])
+    call s:msg('Changelist ' . l:new_cl[1] . ' created.')
+    return l:new_cl[1]
   endif
   return ''
 endfunction
