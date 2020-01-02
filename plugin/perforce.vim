@@ -44,6 +44,11 @@ endif
 if !exists('g:perforce_use_relative_paths')
   let g:perforce_use_relative_paths = 0
 endif
+" g:perforce_use_cygpath (0|1, default: 0)
+" Use cygpath to translate paths from cygwin to absolute windows paths
+if !exists('g:perforce_use_cygpath')
+  let g:perforce_use_cygpath = 0
+endif
 " g:perforce_prompt_on_open
 " Prompt when a file is opened either on change or on save
 if !exists('g:perforce_prompt_on_open')
@@ -83,6 +88,9 @@ function! s:P4ShellCurrentBuffer(cmd, ...)
     let l:filename = expand('%')
   else
     let l:filename = expand('%:p')
+  endif
+  if g:perforce_use_cygpath
+	  let l:filename = system('cygpath -wa ' . shellescape(l:filename) . ' | tr -d \\n')
   endif
   return call('s:P4Shell', [a:cmd . ' ' . shellescape(l:filename)] + a:000)
 endfunction
@@ -179,6 +187,9 @@ function! perforce#P4CallEditWithPrompt()
     let l:path = expand('%:h')
   else
     let l:path = expand('%:p:h')
+  endif
+  if g:perforce_use_cygpath
+	  let l:path = system('cygpath -wa ' . shellescape(l:path) . ' | tr -d \\n')
   endif
   if ! s:IsPathInP4(l:path)
     return
