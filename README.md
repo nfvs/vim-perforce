@@ -51,6 +51,9 @@ Restrict Perforce automatic operations (save/change read-only files) to a limite
 ##### g:perforce\_use\_relative\_paths _(default: 0)_
 Send relative file paths to Perforce so it can automatically detect which root to use (useful when sharing a Perforce repository between Linux and Windows or when using Cygwin).
 
+##### g:perforce\_use\_cygpath _(default: 0)_
+Use the cygpath utility to translate paths from Cygwin to absolute Windows paths. May work in cases where g:perforce\_use\_relative\_paths does not.
+
 ##### g:perforce\_prompt\_on\_open _(default: 1)_
 Whether to prompt the user when a file is open for edit (either on change or on save).
 
