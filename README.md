@@ -23,6 +23,9 @@ Additionally, the following commands are available:
 ##### :P4info
 Display perforce information.
 
+##### :P4add
+Add the current file to perforce (added to the default changelist).
+
 ##### :P4edit
 Start editing the current file (opened in the default changelist).
 
