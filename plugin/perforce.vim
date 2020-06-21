@@ -18,6 +18,7 @@ endif
 " Available commands
 
 command P4info call perforce#P4CallInfo()
+command P4add call perforce#P4CallAdd()
 command P4edit call perforce#P4CallEdit()
 command P4revert call perforce#P4CallRevert()
 command P4movetocl call perforce#P4CallPromptMoveToChangelist()
@@ -203,6 +204,19 @@ function! perforce#P4CallEditWithPrompt()
       redraw
     endif
   endif
+endfunction
+
+function! perforce#P4CallAdd()
+  let l:output = s:P4ShellCurrentBuffer('add')
+  if s:P4OutputHasError(l:output) == 1
+    return 1
+  endif
+  if v:shell_error
+    call s:err('Unable to add file to perforce.', l:output)
+    return 1
+  endif
+  silent! setlocal noreadonly autoread modifiable
+  call s:msg('File added to perforce.')
 endfunction
 
 function! perforce#P4CallEdit()
